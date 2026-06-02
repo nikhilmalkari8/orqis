@@ -18,18 +18,23 @@ dev  ──PR──►  stage  ──PR──►  prod
 
 ## One-time setup (repo owner)
 
-Private repos need **GitHub Pro** *or* a **public** repo for branch protection on GitHub Free.
+Repo is **public** — branch protection is enabled on `stage` and `prod` (PR required, no direct push).
+
+**Push the workflow** (needs `workflow` scope on your `gh` token once):
 
 ```bash
-# 1) Allow pushing workflow files (if push was rejected)
 gh auth refresh -h github.com -s repo,workflow
+# Complete the browser device login when prompted
 git push origin dev
+```
 
-# 2) Run workflow once on dev (Actions tab) so the check name exists
+**Re-enable the CI gate** after the workflow exists on `dev`:
 
-# 3) Apply protection (after Pro upgrade OR: gh repo edit --visibility public)
+```bash
 ./scripts/setup-branch-protection.sh
 ```
+
+The first `dev → stage` PR can merge without the `enforce` check (workflow must land on `stage` first). Later PRs use the check once the workflow is on the base branch.
 
 If the required check name differs, open a PR to `stage`, see the failed/pending check label in the PR UI, then update `STATUS_CONTEXT` in the script.
 
