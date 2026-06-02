@@ -1,0 +1,35 @@
+# Enforce promotion path: dev → stage → prod (no skips, no wrong source branch).
+name: Enforce branch flow
+
+on:
+  pull_request:
+    branches: [stage, prod]
+  push:
+    branches: [stage, prod]
+
+jobs:
+  enforce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate source branch
+        env:
+          BASE: ${{ github.event.pull_request.base.ref || github.ref_name }}
+          HEAD: ${{ github.event.pull_request.head.ref || '' }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "pull_request" ]; then
+            if [ "$BASE" = "stage" ] && [ "$HEAD" != "dev" ]; then
+              echo "::error::Merges into stage must come from branch dev (got: $HEAD)"
+              exit 1
+            fi
+            if [ "$BASE" = "prod" ] && [ "$HEAD" != "stage" ]; then
+              echo "::error::Merges into prod must come from branch stage (got: $HEAD)"
+              exit 1
+            fi
+            echo "OK: $HEAD → $BASE"
+            exit 0
+          fi
+          # Direct push to stage/prod (should be blocked by branch protection)
+          echo "::error::Direct pushes to $BASE are not allowed. Open a PR from the upstream branch."
+          exit 1
