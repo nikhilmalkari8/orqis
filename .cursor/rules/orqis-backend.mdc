@@ -1,0 +1,36 @@
+---
+description: Orqis backend — agents, compiler, Celery, Arango
+globs: backend/**/*
+alwaysApply: false
+---
+
+# Backend
+
+**KB:** `knowledge-base/schemas/arango.md` · `workflow-definition.md` · `workflow-state.md` · `apis/*.md`
+
+## Layout
+
+- `app/agents/*.py` — LangGraph nodes (`async def run(state) -> state`)
+- `core/agent_registry.py` — register slugs here
+- `core/workflow_compiler.py` — validate + compile to LangGraph
+- `tasks/workflow_tasks.py` — **only** place that runs graphs (Celery)
+- `services/` logic · `repositories/` Arango · `api/` HTTP
+
+## New agent checklist
+
+1. `app/agents/{name}.py` + mock branch in `_mock.py` if needed
+2. `AgentRegistry.load_builtin_agents()`
+3. `app/seed/agents.py` (`AGENT_SEED_DATA`)
+4. `knowledge-base/schemas/workflow-state.md` keys
+5. `knowledge-base/graph/dependencies.yaml` — `agent_implementations`
+
+## Invariants
+
+- **Never** run LangGraph in API routes — enqueue `execute_workflow.delay`
+- Workflow create/update → `sync_workflow_agent_edges()`
+- Secrets in env only (`config.py`), never in Arango documents
+- `MOCK_AGENTS` default for local dev
+
+## Tests
+
+`pytest` from `backend/` — extend `tests/test_compiler.py` / `test_agent_registry.py` when touching core

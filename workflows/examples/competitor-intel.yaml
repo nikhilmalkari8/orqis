@@ -1,0 +1,26 @@
+name: competitor-intel
+slug: competitor-intel
+description: Scrape → extract → analyze competitor pages.
+schema_version: "1.0"
+inputs:
+  urls:
+    type: array
+    items: string
+    required: true
+  email:
+    type: string
+    required: false
+steps:
+  - id: scrape
+    agent: browser-agent
+    config:
+      model: gpt-4o
+    inputs:
+      urls: "{{ inputs.urls }}"
+      browser_task: Extract pricing and plan names from each URL.
+  - id: extract
+    agent: extractor
+  - id: analyze
+    agent: analyzer
+    config:
+      model: gpt-4o

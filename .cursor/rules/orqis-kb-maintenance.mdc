@@ -1,0 +1,34 @@
+---
+description: Editing knowledge-base — keep graph and APIs in sync
+globs: knowledge-base/**/*
+alwaysApply: false
+---
+
+# Knowledge-base maintenance
+
+**Canonical docs live here.** `scrap/` is archive — do not copy scrap into KB.
+
+## File roles
+
+| Path | Update when |
+|------|-------------|
+| `schemas/*.md` | Arango fields, workflow definition, state keys, DTOs |
+| `apis/*.md` | Routes, status codes, side effects |
+| `graph/dependencies.yaml` | New module, coupling, or renamed files |
+| `graph/dependency-graph.md` | New layer or flow (mermaid only if needed) |
+| `graph/CHANGE_IMPACT.md` | New change-type checklist row |
+| `features/Fxx-*.md` | Per shipped feature (delta only) |
+| `INDEX.md` | One row in features table — keep short |
+| `changelog.md` | One dated bullet |
+
+## Token rules
+
+- No wall-of-text — tables and paths
+- Link, don't duplicate `scrap/design/orqis_mvp_design.md`
+- `INDEX.md` is the table of contents, not the spec
+
+## New feature Fxx
+
+1. Copy `feature-template.md`
+2. List `dependencies.yaml` nodes to add/change
+3. Do not edit `F00-mvp-baseline.md` for new work

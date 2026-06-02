@@ -1,0 +1,20 @@
+---
+description: Orqis entry — knowledge-base first, scrap is archive
+alwaysApply: true
+---
+
+# Orqis (always)
+
+**Read first:** `knowledge-base/INDEX.md` → `knowledge-base/invariants.md`
+
+**Before code:** `knowledge-base/graph/dependencies.yaml` (node for what you touch) + `CHANGE_IMPACT.md`
+
+**Detail on demand:** `knowledge-base/schemas/` · `knowledge-base/apis/` · `knowledge-base/features/Fxx-*.md`
+
+**After ship:** feature file + INDEX row + changelog + `dependencies.yaml` if coupling changed
+
+**PR:** `make validate-graph` · [`CONTRIBUTING.md`](../../CONTRIBUTING.md)
+
+**Archive only:** `scrap/` — not for implementation
+
+**MVP:** Celery+Redis for runs · Arango metadata · no external agent onboarding · no no-code builder unless asked

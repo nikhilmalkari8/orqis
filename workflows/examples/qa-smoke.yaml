@@ -1,0 +1,19 @@
+name: qa-smoke
+slug: qa-smoke
+description: Browser-based QA smoke test (reuses browser-agent stack via qa-tester).
+schema_version: "1.0"
+inputs:
+  target_url:
+    type: string
+    required: true
+  scenario:
+    type: string
+    required: false
+steps:
+  - id: qa-run
+    agent: qa-tester
+    config:
+      model: gpt-4o
+    inputs:
+      target_url: "{{ inputs.target_url }}"
+      scenario: "{{ inputs.scenario }}"

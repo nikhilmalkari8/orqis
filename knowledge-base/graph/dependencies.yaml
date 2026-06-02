@@ -1,0 +1,187 @@
+# Orqis component dependency graph (update when adding features)
+# Usage: find node → read `depends_on` (must not break) + `affects` (must update/test)
+
+version: 1
+components:
+
+  # --- Data ---
+  arango_users:
+    files: [backend/app/repositories/user_repository.py]
+    depends_on: [arango_db]
+    affects: [api_auth, service_auth]
+
+  arango_agents:
+    files: [backend/app/repositories/agent_repository.py, backend/app/seed/agents.py]
+    depends_on: [arango_db]
+    affects: [api_agents, service_agent, agent_registry, workflow_compiler, graph_queries, ui_agents]
+
+  arango_workflows:
+    files: [backend/app/repositories/workflow_repository.py]
+    depends_on: [arango_db]
+    affects: [api_workflows, service_workflow, workflow_edges, worker_execute]
+
+  arango_executions:
+    files: [backend/app/repositories/execution_repository.py]
+    depends_on: [arango_db]
+    affects: [api_executions, service_execution, worker_execute, ui_executions, service_agent]
+
+  arango_graph:
+    files: [backend/app/repositories/graph_repository.py, backend/app/services/workflow_edges.py]
+    depends_on: [arango_agents, arango_workflows, arango_executions]
+    affects: [api_agents, service_agent]
+
+  arango_db:
+    files: [backend/app/db/arango.py, backend/scripts/init_arangodb.py]
+    depends_on: []
+    affects: [all arango_* repos]
+
+  # --- Core orchestration ---
+  agent_registry:
+    files: [backend/app/core/agent_registry.py, backend/app/agents/*.py]
+    depends_on: [agent_implementations]
+    affects: [workflow_compiler, worker_execute]
+
+  agent_implementations:
+    files: [backend/app/agents/browser.py, backend/app/agents/extractor.py, backend/app/agents/analyzer.py, backend/app/agents/reporter.py, backend/app/agents/qa_tester.py, backend/app/agents/_mock.py]
+    depends_on: [config_mock_agents, litellm_optional, browser_use_optional]
+    affects: [agent_registry, workflow_state]
+
+  workflow_compiler:
+    files: [backend/app/core/workflow_compiler.py]
+    depends_on: [agent_registry, input_resolver, workflow_state]
+    affects: [service_workflow, worker_execute]
+
+  input_resolver:
+    files: [backend/app/core/input_resolver.py]
+    depends_on: []
+    affects: [workflow_compiler]
+
+  workflow_state:
+    files: [backend/app/core/workflow_state.py]
+    depends_on: []
+    affects: [workflow_compiler, agent_implementations]
+
+  workflow_edges:
+    files: [backend/app/services/workflow_edges.py]
+    depends_on: [arango_agents, arango_workflows]
+    affects: [service_workflow, graph_queries]
+
+  # --- Async execution ---
+  redis_celery:
+    files: [backend/app/tasks/celery_app.py, docker-compose.yml]
+    depends_on: []
+    affects: [worker_execute, api_health]
+
+  worker_execute:
+    files: [backend/app/tasks/workflow_tasks.py]
+    depends_on: [workflow_compiler, arango_executions, arango_workflows, redis_celery, langsmith_optional]
+    affects: [api_workflows_run, ui_executions]
+
+  # --- API layer ---
+  api_auth:
+    files: [backend/app/api/auth.py, backend/app/core/security.py]
+    depends_on: [service_auth]
+    affects: [api_deps, ui_auth]
+
+  api_agents:
+    files: [backend/app/api/agents.py]
+    depends_on: [service_agent, api_deps]
+    affects: [ui_agents]
+
+  api_workflows:
+    files: [backend/app/api/workflows.py]
+    depends_on: [service_workflow, service_execution, api_deps]
+    affects: [ui_workflows]
+
+  api_workflows_run:
+    files: [backend/app/api/workflows.py]
+    depends_on: [service_execution, worker_execute]
+    affects: [ui_workflows, ui_executions]
+
+  api_executions:
+    files: [backend/app/api/executions.py]
+    depends_on: [service_execution, api_deps]
+    affects: [ui_executions, ui_agents]
+
+  api_deps:
+    files: [backend/app/api/deps.py]
+    depends_on: [arango_db, service_auth]
+    affects: [all protected api_*]
+
+  api_health:
+    files: [backend/app/api/health.py]
+    depends_on: [arango_db, redis_celery]
+    affects: []
+
+  # --- Services ---
+  service_auth:
+    files: [backend/app/services/auth_service.py]
+    depends_on: [arango_users]
+    affects: [api_auth]
+
+  service_agent:
+    files: [backend/app/services/agent_service.py]
+    depends_on: [arango_agents, graph_queries, arango_executions]
+    affects: [api_agents]
+
+  service_workflow:
+    files: [backend/app/services/workflow_service.py]
+    depends_on: [arango_workflows, workflow_compiler, workflow_edges]
+    affects: [api_workflows]
+
+  service_execution:
+    files: [backend/app/services/execution_service.py]
+    depends_on: [arango_executions, arango_workflows, worker_execute]
+    affects: [api_executions, api_workflows_run]
+
+  graph_queries:
+    files: [backend/app/repositories/graph_repository.py]
+    depends_on: [arango_graph]
+    affects: [service_agent]
+
+  # --- Frontend ---
+  ui_auth:
+    files: [frontend/src/pages/LoginPage.jsx, frontend/src/pages/SignupPage.jsx, frontend/src/context/AuthContext.jsx]
+    depends_on: [api_auth]
+    affects: [all ui_*]
+
+  ui_agents:
+    files: [frontend/src/pages/AgentsListPage.jsx, frontend/src/pages/AgentDetailPage.jsx]
+    depends_on: [api_agents]
+    affects: []
+
+  ui_workflows:
+    files: [frontend/src/pages/WorkflowsListPage.jsx, frontend/src/pages/WorkflowDetailPage.jsx]
+    depends_on: [api_workflows, api_workflows_run]
+    affects: []
+
+  ui_executions:
+    files: [frontend/src/pages/ExecutionsListPage.jsx, frontend/src/pages/ExecutionDetailPage.jsx]
+    depends_on: [api_executions]
+    affects: [ui_agents]
+
+  ui_dashboard:
+    files: [frontend/src/pages/DashboardPage.jsx]
+    depends_on: [api_agents, api_workflows, api_executions]
+    affects: []
+
+  # --- External optional ---
+  config_mock_agents:
+    files: [backend/app/config.py]
+    depends_on: []
+    affects: [agent_implementations]
+
+  langsmith_optional:
+    files: [backend/app/tasks/workflow_tasks.py]
+    depends_on: []
+    affects: [worker_execute, arango_executions]
+
+  litellm_optional:
+    files: [backend/app/agents/analyzer.py, backend/app/agents/extractor.py]
+    depends_on: []
+    affects: [agent_implementations]
+
+  browser_use_optional:
+    files: [backend/app/agents/browser.py, backend/app/agents/qa_tester.py]
+    depends_on: []
+    affects: [agent_implementations]

@@ -1,0 +1,28 @@
+---
+description: Orqis UI — operational pages, API client, no builder
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# Frontend
+
+**KB:** `knowledge-base/apis/INDEX.md` + module docs for routes you call
+
+## Pages (do not add form/canvas workflow builder unless asked)
+
+| Route | API |
+|-------|-----|
+| `/agents`, `/agents/:slug` | `GET /api/agents` |
+| `/workflows`, `/workflows/:id` | CRUD + `POST .../run` |
+| `/executions`, `/executions/:id` | `GET /api/executions` |
+
+## Conventions
+
+- Auth: `context/AuthContext.jsx` + `api/client.js` Bearer token
+- Poll execution detail while `pending` / `running`
+- LangSmith: link from `execution.langsmith.trace_url` or nested field — do not rebuild trace UI
+- Agent detail must show: schemas, workflows using, stats, recent runs
+
+## When API changes
+
+Update matching page + `knowledge-base/apis/{module}.md` + check `dependencies.yaml` `ui_*` nodes
